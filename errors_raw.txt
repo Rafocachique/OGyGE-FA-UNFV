@@ -1,0 +1,25 @@
+﻿src/app/dashboard/advisories/page.tsx(686,50): error TS2367: This comparison appears to be unintentional because the types '"APROBADO" | "DESAPROBADO" | "PENDIENTE" | undefined' and '"APROBado"' have no overlap.
+src/app/dashboard/thesis-review/page.tsx(1379,49): error TS7006: Parameter 'snapshot' implicitly has an 'any' type.
+src/app/dashboard/thesis-review/page.tsx(1382,18): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/app/dashboard/thesis-review/page.tsx(1383,21): error TS7006: Parameter 'plan' implicitly has an 'any' type.
+src/components/assignment-form-dialog.tsx(218,20): error TS2345: Argument of type '{ submissionDate: Date; assignmentType: "asesor" | "revisores"; modalidad: "Tesis" | "Suficiencia Profesional"; revisor1: string | undefined; revisor2: string | undefined; supervisorRevisores: string | undefined; asesor: string | undefined; supervisorAsesores: string | undefined; } | { ...; }' is not assignable to parameter of type '{ submissionDate: Date; assignmentType: "asesor" | "revisores"; revisor1?: string | undefined; revisor2?: string | undefined; modalidad?: "Tesis" | "Suficiencia Profesional" | undefined; supervisorRevisores?: string | undefined; supervisorAsesores?: string | undefined; asesor?: string | undefined; } | { ...; } | Res...'.
+  Type '{ submissionDate: Date; assignmentType: "asesor" | "revisores"; modalidad: string; revisor1: undefined; revisor2: undefined; supervisorRevisores: string | undefined; asesor: undefined; supervisorAsesores: string | undefined; }' is not assignable to type '{ submissionDate: Date; assignmentType: "asesor" | "revisores"; revisor1?: string | undefined; revisor2?: string | undefined; modalidad?: "Tesis" | "Suficiencia Profesional" | undefined; supervisorRevisores?: string | undefined; supervisorAsesores?: string | undefined; asesor?: string | undefined; } | { ...; } | Res...'.
+    Type '{ submissionDate: Date; assignmentType: "asesor" | "revisores"; modalidad: string; revisor1: undefined; revisor2: undefined; supervisorRevisores: string | undefined; asesor: undefined; supervisorAsesores: string | undefined; }' is not assignable to type '{ submissionDate: Date; assignmentType: "asesor" | "revisores"; revisor1?: string | undefined; revisor2?: string | undefined; modalidad?: "Tesis" | "Suficiencia Profesional" | undefined; supervisorRevisores?: string | undefined; supervisorAsesores?: string | undefined; asesor?: string | undefined; } | { ...; }'.
+      Type '{ submissionDate: Date; assignmentType: "asesor" | "revisores"; modalidad: string; revisor1: undefined; revisor2: undefined; supervisorRevisores: string | undefined; asesor: undefined; supervisorAsesores: string | undefined; }' is not assignable to type '{ submissionDate?: Date | undefined; assignmentType?: "asesor" | "revisores" | undefined; revisor1?: string | undefined; revisor2?: string | undefined; modalidad?: "Tesis" | "Suficiencia Profesional" | undefined; supervisorRevisores?: string | undefined; supervisorAsesores?: string | undefined; asesor?: string | und...'.
+        Types of property 'modalidad' are incompatible.
+          Type 'string' is not assignable to type '"Tesis" | "Suficiencia Profesional" | undefined'.
+src/components/assignment-form-dialog.tsx(306,17): error TS2322: Type '{ codigo: string; apellidosNombres: string; especialidad: string; temaBachiller: string; avatarUrl: string | null; }' is not assignable to type 'Pick<Student, "codigo" | "apellidosNombres" | "especialidad" | "temaBachiller" | "avatarUrl">'.
+  Types of property 'avatarUrl' are incompatible.
+    Type 'string | null' is not assignable to type 'string | undefined'.
+      Type 'null' is not assignable to type 'string | undefined'.
+src/components/assignment-form-dialog.tsx(328,21): error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+src/components/docente-form-dialog.tsx(61,20): error TS2304: Cannot find name 'Docente'.
+src/components/docente-form-dialog.tsx(158,55): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/components/docente-record-form-dialog.tsx(147,83): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/components/export-button.tsx(376,25): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/components/export-button.tsx(376,28): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/components/export-button.tsx(376,31): error TS7006: Parameter 'cY' implicitly has an 'any' type.
+src/components/users-table.tsx(46,15): error TS2552: Cannot find name 'ThesisPlan'. Did you mean 'TestPlan'?
+src/components/users-table.tsx(247,85): error TS2345: Argument of type 'string' is not assignable to parameter of type 'User'.

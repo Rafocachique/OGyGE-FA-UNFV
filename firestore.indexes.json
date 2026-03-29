@@ -1,0 +1,22 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "thesisPlans",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "estadoGlobal",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "supervisorRevisoresId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ]
+}

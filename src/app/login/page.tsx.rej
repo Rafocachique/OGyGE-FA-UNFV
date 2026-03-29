@@ -1,0 +1,70 @@
+diff a/src/app/login/page.tsx b/src/app/login/page.tsx	(rejected hunks)
+@@ -4,7 +4,7 @@
+ import { useState, useEffect } from 'react';
+ import Image from 'next/image';
+ import { useRouter } from 'next/navigation';
+-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
++import { getAuth, signInWithEmailAndPassword, signOut } from "firebase/auth";
+ import { app, db } from '@/lib/firebase';
+ import { Button } from '@/components/ui/button';
+ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
+ import { BookOpenCheck, LoaderCircle } from 'lucide-react';
+ import { useToast } from '@/hooks/use-toast';
+ import { doc, onSnapshot } from 'firebase/firestore';
++import { useAuth } from '@/hooks/use-auth';
+ 
+ export default function LoginPage() {
+   const [email, setEmail] = useState('');
+@@ -22,6 +23,14 @@ export default function LoginPage() {
+   const router = useRouter();
+   const { toast } = useToast();
+   const auth = getAuth(app);
++  const { user, loading: authLoading } = useAuth();
++
++  useEffect(() => {
++    // Redirect to dashboard if user is already logged in
++    if (!authLoading && user) {
++      router.push('/');
++    }
++  }, [user, authLoading, router]);
+ 
+   useEffect(() => {
+     const configRef = doc(db, "appConfig", "main");
+@@ -39,8 +48,8 @@ export default function LoginPage() {
+     e.preventDefault();
+     setLoading(true);
+     try {
++      // Just sign in. The useEffect will handle the redirect.
+       await signInWithEmailAndPassword(auth, email.toLowerCase(), password);
+-      router.push('/');
+     } catch (error: any) {
+       let title = "Error de autenticación";
+       let description = "Ocurrió un error inesperado. Por favor, inténtelo de nuevo.";
+@@ -56,11 +65,23 @@ export default function LoginPage() {
+         title: title,
+         description: description,
+       });
+-    } finally {
+-      setLoading(false);
+-    }
++      setLoading(false); // Ensure loading is stopped on error
++    } 
++    // Do not set loading to false in a finally block here, 
++    // as it would race with the redirect. It's handled on error.
+   };
+ 
++  // While checking auth state, show a loader.
++  // Also, if the user object becomes available, continue showing the loader
++  // until the useEffect redirects them. This prevents a flash of the login form.
++  if (authLoading || user) {
++    return (
++        <div className="flex items-center justify-center min-h-screen w-full">
++            <LoaderCircle className="h-12 w-12 animate-spin text-primary" />
++        </div>
++    );
++  }
++
+   return (
+     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
+       <div className="flex items-center justify-center py-12">

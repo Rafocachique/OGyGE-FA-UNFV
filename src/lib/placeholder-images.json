@@ -1,0 +1,10 @@
+{
+  "placeholderImages": [
+    {
+      "id": "login-image-1",
+      "description": "A modern university library with students studying.",
+      "imageUrl": "https://picsum.photos/seed/login/1920/1080",
+      "imageHint": "university library"
+    }
+  ]
+}

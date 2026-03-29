@@ -1,0 +1,50 @@
+﻿src/app/dashboard/advisories/page.tsx(686,50): error TS2367: This comparison appears to be unintentional because the types '"APROBADO" | "DESAPROBADO" | "PENDIENTE" | undefined' and '"APROBado"' have no overlap.
+src/app/dashboard/advisories/page.tsx(1226,19): error TS2352: Conversion of type '{ uid: string; id: string; }' to type 'User' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ uid: string; id: string; }' is missing the following properties from type 'User': nombre, apellidos, correo, roles
+src/app/dashboard/assignment/page.tsx(60,58): error TS2352: Conversion of type '{ uid: string; id: string; }' to type 'User' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ uid: string; id: string; }' is missing the following properties from type 'User': nombre, apellidos, correo, roles
+src/app/dashboard/student-registration/page.tsx(43,58): error TS2352: Conversion of type '{ uid: string; id: string; }' to type 'User' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ uid: string; id: string; }' is missing the following properties from type 'User': nombre, apellidos, correo, roles
+src/app/dashboard/thesis-review/page.tsx(1335,19): error TS2352: Conversion of type '{ uid: string; id: string; }' to type 'User' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ uid: string; id: string; }' is missing the following properties from type 'User': nombre, apellidos, correo, roles
+src/app/dashboard/thesis-review/page.tsx(1379,49): error TS7006: Parameter 'snapshot' implicitly has an 'any' type.
+src/app/dashboard/thesis-review/page.tsx(1382,18): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/app/dashboard/thesis-review/page.tsx(1383,21): error TS7006: Parameter 'plan' implicitly has an 'any' type.
+src/app/dashboard/turnitin-review/page.tsx(542,55): error TS2352: Conversion of type '{ uid: string; id: string; }' to type 'User' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ uid: string; id: string; }' is missing the following properties from type 'User': nombre, apellidos, correo, roles
+src/components/advisory-data-table.tsx(19,41): error TS2307: Cannot find module '@/app/(dashboard)/advisories/page' or its corresponding type declarations.
+src/components/advisory-history-view.tsx(5,41): error TS2307: Cannot find module '@/app/(dashboard)/advisories/page' or its corresponding type declarations.
+src/components/advisory-history-view.tsx(70,38): error TS7006: Parameter 'dateString' implicitly has an 'any' type.
+src/components/archived-reviews-view.tsx(4,33): error TS2307: Cannot find module '@/app/(dashboard)/thesis-review/page' or its corresponding type declarations.
+src/components/assignment-form-dialog.tsx(12,43): error TS2307: Cannot find module '@/app/(dashboard)/assignment/page' or its corresponding type declarations.
+src/components/assignment-form-dialog.tsx(218,20): error TS2345: Argument of type '{ submissionDate: Date; assignmentType: string; modalidad: "Tesis" | "Suficiencia Profesional"; revisor1: string | undefined; revisor2: string | undefined; supervisorRevisores: string | undefined; asesor: string | undefined; supervisorAsesores: string | undefined; } | { ...; }' is not assignable to parameter of type '{ submissionDate: Date; assignmentType: "revisores" | "asesor"; asesor?: string | undefined; revisor1?: string | undefined; revisor2?: string | undefined; modalidad?: "Tesis" | "Suficiencia Profesional" | undefined; supervisorAsesores?: string | undefined; supervisorRevisores?: string | undefined; } | { ...; } | Res...'.
+  Type '{ submissionDate: Date; assignmentType: string; modalidad: "Tesis" | "Suficiencia Profesional"; revisor1: string | undefined; revisor2: string | undefined; supervisorRevisores: string | undefined; asesor: string | undefined; supervisorAsesores: string | undefined; }' is not assignable to type '{ submissionDate: Date; assignmentType: "revisores" | "asesor"; asesor?: string | undefined; revisor1?: string | undefined; revisor2?: string | undefined; modalidad?: "Tesis" | "Suficiencia Profesional" | undefined; supervisorAsesores?: string | undefined; supervisorRevisores?: string | undefined; } | { ...; } | Res...'.
+    Type '{ submissionDate: Date; assignmentType: string; modalidad: "Tesis" | "Suficiencia Profesional"; revisor1: string | undefined; revisor2: string | undefined; supervisorRevisores: string | undefined; asesor: string | undefined; supervisorAsesores: string | undefined; }' is not assignable to type '{ submissionDate: Date; assignmentType: "revisores" | "asesor"; asesor?: string | undefined; revisor1?: string | undefined; revisor2?: string | undefined; modalidad?: "Tesis" | "Suficiencia Profesional" | undefined; supervisorAsesores?: string | undefined; supervisorRevisores?: string | undefined; } | { ...; } | Res...'.
+      Type '{ submissionDate: Date; assignmentType: string; modalidad: "Tesis" | "Suficiencia Profesional"; revisor1: string | undefined; revisor2: string | undefined; supervisorRevisores: string | undefined; asesor: string | undefined; supervisorAsesores: string | undefined; }' is not assignable to type '{ submissionDate?: Date | undefined; assignmentType?: "revisores" | "asesor" | undefined; asesor?: string | undefined; revisor1?: string | undefined; revisor2?: string | undefined; modalidad?: "Tesis" | ... 1 more ... | undefined; supervisorAsesores?: string | undefined; supervisorRevisores?: string | undefined; }'.
+        Types of property 'assignmentType' are incompatible.
+          Type 'string' is not assignable to type '"revisores" | "asesor" | undefined'.
+src/components/assignment-form-dialog.tsx(306,17): error TS2322: Type '{ codigo: string; apellidosNombres: string; especialidad: string; temaBachiller: string; avatarUrl: string | null; }' is not assignable to type 'Pick<Student, "codigo" | "apellidosNombres" | "especialidad" | "temaBachiller" | "avatarUrl">'.
+  Types of property 'avatarUrl' are incompatible.
+    Type 'string | null' is not assignable to type 'string | undefined'.
+      Type 'null' is not assignable to type 'string | undefined'.
+src/components/dashboard-nav.tsx(48,70): error TS2345: Argument of type 'string[]' is not assignable to parameter of type 'UserRole[]'.
+  Type 'string' is not assignable to type 'UserRole'.
+src/components/dashboard-nav.tsx(52,61): error TS2345: Argument of type 'string[]' is not assignable to parameter of type 'UserRole[]'.
+  Type 'string' is not assignable to type 'UserRole'.
+src/components/docente-form-dialog.tsx(61,20): error TS2304: Cannot find name 'Docente'.
+src/components/docente-form-dialog.tsx(158,55): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/components/docente-record-form-dialog.tsx(40,31): error TS2307: Cannot find module '@/app/(dashboard)/teachers/page' or its corresponding type declarations.
+src/components/docente-record-form-dialog.tsx(147,83): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/components/docente-transfer-dialog.tsx(19,31): error TS2307: Cannot find module '@/app/(dashboard)/teachers/page' or its corresponding type declarations.
+src/components/export-button.tsx(376,25): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/components/export-button.tsx(376,28): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/components/export-button.tsx(376,31): error TS7006: Parameter 'cY' implicitly has an 'any' type.
+src/components/general-data-table.tsx(19,33): error TS2307: Cannot find module '@/app/(dashboard)/thesis-review/page' or its corresponding type declarations.
+src/components/pending-assignments.tsx(12,36): error TS2307: Cannot find module '@/app/(dashboard)/assignment/page' or its corresponding type declarations.
+src/components/registered-data-view.tsx(25,33): error TS2307: Cannot find module '@/app/(dashboard)/thesis-review/page' or its corresponding type declarations.
+src/components/registered-data-view.tsx(135,60): error TS7006: Parameter 'obs' implicitly has an 'any' type.
+src/components/registered-data-view.tsx(135,65): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/components/student-form-dialog.tsx(14,43): error TS2307: Cannot find module '@/app/(dashboard)/assignment/page' or its corresponding type declarations.
+src/components/users-table.tsx(46,15): error TS2552: Cannot find name 'ThesisPlan'. Did you mean 'TestPlan'?
+src/components/users-table.tsx(247,85): error TS2345: Argument of type 'string' is not assignable to parameter of type 'User'.
