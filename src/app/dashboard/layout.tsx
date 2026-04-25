@@ -21,7 +21,7 @@ import { SessionManager } from '@/components/session-manager';
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     const { loading, appUser, user } = useAuth();
     const router = useRouter();
-    const [logoUrl, setLogoUrl] = useState("/unfv-logo.png");
+    const [logoUrl, setLogoUrl] = useState("https://picsum.photos/seed/logo/200/100");
     const [appTitle, setAppTitle] = useState("Gestion de Tesis de Grados y Titulos -FA");
     const [allPlans, setAllPlans] = useState<ThesisPlan[]>([]);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -38,7 +38,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                     setAppTitle(data.appTitle);
                 }
             } else {
-                setLogoUrl("/unfv-logo.png");
+                setLogoUrl("https://picsum.photos/seed/logo/200/100");
                 setAppTitle("Gestion de Tesis de Grados y Titulos -FA");
             }
         });
@@ -105,7 +105,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           <header className="sticky top-0 flex h-20 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
              <a href="/dashboard" className="flex items-center gap-4 mr-auto">
               <div className="relative w-48 h-16">
-                <Image src={logoUrl} alt="App Logo" fill className="object-contain" />
+                <Image src={logoUrl} alt="App Logo" fill className="object-contain" loading="eager" />
               </div>
                <div className="font-semibold text-xl hidden lg:block">{appTitle}</div>
             </a>

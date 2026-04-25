@@ -254,12 +254,12 @@ export function AssignmentFormDialog({
 
     try {
         const submissionDate = data.submissionDate;
-        const studentData = {
+         const studentData = {
           codigo: student.codigo,
           apellidosNombres: student.apellidosNombres,
           especialidad: student.especialidad,
           temaBachiller: student.temaBachiller,
-          avatarUrl: student.avatarUrl || undefined,
+          ...(student.avatarUrl && { avatarUrl: student.avatarUrl }),
         }
 
         const turnitinSupervisor = docentes.find(d => d.responsabilidades.includes('docente_supervisor_turnitin'));
@@ -275,7 +275,7 @@ export function AssignmentFormDialog({
                     asesorId: data.asesor,
                     supervisorAsesoresId: data.supervisorAsesores,
                     modalidad: data.modalidad,
-                    turnitinSupervisorId: turnitinSupervisor?.uid || undefined,
+                     turnitinSupervisorId: turnitinSupervisor?.uid,
                     submissionDate: submissionDate.toISOString(),
                     fechaVencimientoAsesoria: addYears(submissionDate, 1).toISOString(),
                     progress: 0,
@@ -320,15 +320,15 @@ export function AssignmentFormDialog({
                 };
             } else { // 'asesor'
                  planData = {
-                    ...planData,
-                    estadoGlobal: "EN ASESORIA",
-                    asesorId: data.asesor,
-                    supervisorAsesoresId: data.supervisorAsesores,
-                    modalidad: data.modalidad,
-                    turnitinSupervisorId: turnitinSupervisor?.uid || undefined,
-                    progress: 0,
-                    fechaVencimientoAsesoria: addYears(submissionDate, 1).toISOString(),
-                 };
+                     ...planData,
+                     estadoGlobal: "EN ASESORIA",
+                     asesorId: data.asesor,
+                     supervisorAsesoresId: data.supervisorAsesores,
+                     modalidad: data.modalidad,
+                    turnitinSupervisorId: turnitinSupervisor?.uid,
+                     progress: 0,
+                     fechaVencimientoAsesoria: addYears(submissionDate, 1).toISOString(),
+                  };
             }
             
             await setDoc(newPlanRef, planData);
