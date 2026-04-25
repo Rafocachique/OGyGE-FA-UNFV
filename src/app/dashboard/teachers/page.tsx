@@ -52,6 +52,9 @@ export default function TeachersPage() {
   const { toast } = useToast();
   const { appUser } = useAuth();
 
+  const [usersDocentes, setUsersDocentes] = useState<(Docente & {isSystemUser: boolean, roles: string[]})[]>([]);
+  const [docentesRecs, setDocentesRecs] = useState<(Docente & {isSystemUser: boolean})[]>([]);
+
   useEffect(() => {
     setLoading(true);
 
@@ -72,62 +75,68 @@ export default function TeachersPage() {
                 isSystemUser: true
             };
         });
-
-        const recordsQuery = collection(db, "docentes");
-        const unsubRecords = onSnapshot(recordsQuery, (recordsSnapshot) => {
-            const docenteRecords: (Docente & {isSystemUser: boolean})[] = recordsSnapshot.docs.map(doc => {
-                const data = doc.data() as Omit<Docente, 'id'> & {uid: string};
-                return { 
-                    id: doc.id,
-                    ...data,
-                    isSystemUser: false 
-                };
-            });
-
-            const allDocentes: (Docente & {isSystemUser: boolean, roles?: string[]})[] = [...docenteUsers];
-            const userEmails = new Set(docenteUsers.map(d => d.correo));
-            
-            docenteRecords.forEach(record => {
-                if (record.correo && !userEmails.has(record.correo)) {
-                    allDocentes.push(record);
-                } else if (!record.correo) {
-                    allDocentes.push(record);
-                }
-            });
-
-            const plansQuery = query(collection(db, "thesisPlans"));
-            const unsubPlans = onSnapshot(plansQuery, (plansSnapshot) => {
-                const allPlans = plansSnapshot.docs.map(doc => ({...doc.data(), id: doc.id} as ThesisPlan));
-                setThesisPlans(allPlans);
-
-                const docentesConConteos: DocenteConteo[] = allDocentes.map(docente => {
-                    const counts = {
-                        revisor: allPlans.filter(p => p.docenteRevisor1Id === docente.uid || p.docenteRevisor2Id === docente.uid).length,
-                        asesor: allPlans.filter(p => p.asesorId === docente.uid).length,
-                        supRevisor: allPlans.filter(p => p.supervisorRevisoresId === docente.uid).length,
-                        supAsesor: allPlans.filter(p => p.supervisorAsesoresId === docente.uid).length,
-                    };
-                    return { ...docente, assignmentCounts: counts };
-                });
-                
-                docentesConConteos.sort((a, b) => {
-                    const nameA = `${a.apellidos} ${a.nombre}`.toLowerCase();
-                    const nameB = `${b.apellidos} ${b.nombre}`.toLowerCase();
-                    return nameA.localeCompare(nameB);
-                });
-
-                setDocentes(docentesConConteos);
-                setLoading(false);
-            });
-
-            return () => unsubPlans();
-        });
-
-        return () => unsubRecords();
+        setUsersDocentes(docenteUsers);
     });
 
-    return () => unsubUsers();
+    const recordsQuery = collection(db, "docentes");
+    const unsubRecords = onSnapshot(recordsQuery, (recordsSnapshot) => {
+        const docenteRecords: (Docente & {isSystemUser: boolean})[] = recordsSnapshot.docs.map(doc => {
+            const data = doc.data() as Omit<Docente, 'id'> & {uid: string};
+            return { 
+                id: doc.id,
+                ...data,
+                isSystemUser: false 
+            };
+        });
+        setDocentesRecs(docenteRecords);
+    });
+
+    const plansQuery = query(collection(db, "thesisPlans"));
+    const unsubPlans = onSnapshot(plansQuery, (plansSnapshot) => {
+        const allPlans = plansSnapshot.docs.map(doc => ({...doc.data(), id: doc.id} as ThesisPlan));
+        setThesisPlans(allPlans);
+    });
+
+    return () => {
+        unsubUsers();
+        unsubRecords();
+        unsubPlans();
+    };
   }, []);
+
+  useEffect(() => {
+    const allDocentes: (Docente & {isSystemUser: boolean, roles?: string[]})[] = [...usersDocentes];
+    const userEmails = new Set(usersDocentes.map(d => d.correo));
+    
+    docentesRecs.forEach(record => {
+        if (record.correo && !userEmails.has(record.correo)) {
+            allDocentes.push(record);
+        } else if (!record.correo) {
+            allDocentes.push(record);
+        }
+    });
+
+    const docentesConConteos: DocenteConteo[] = allDocentes.map(docente => {
+        const counts = {
+            revisor: thesisPlans.filter(p => p.docenteRevisor1Id === docente.uid || p.docenteRevisor2Id === docente.uid).length,
+            asesor: thesisPlans.filter(p => p.asesorId === docente.uid).length,
+            supRevisor: thesisPlans.filter(p => p.supervisorRevisoresId === docente.uid).length,
+            supAsesor: thesisPlans.filter(p => p.supervisorAsesoresId === docente.uid).length,
+        };
+        return { ...docente, assignmentCounts: counts };
+    });
+    
+    docentesConConteos.sort((a, b) => {
+        const nameA = `${a.apellidos} ${a.nombre}`.toLowerCase();
+        const nameB = `${b.apellidos} ${b.nombre}`.toLowerCase();
+        return nameA.localeCompare(nameB);
+    });
+
+    setDocentes(docentesConConteos);
+    if (usersDocentes.length > 0 || docentesRecs.length > 0) {
+        setLoading(false);
+    }
+  }, [usersDocentes, docentesRecs, thesisPlans]);
 
   const filteredDocentes = useMemo(() => {
     if (!searchTerm) {

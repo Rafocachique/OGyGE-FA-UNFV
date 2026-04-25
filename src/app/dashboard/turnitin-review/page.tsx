@@ -536,29 +536,39 @@ export default function TurnitinReviewPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const { appUser } = useAuth();
   
+  const [usersData, setUsersData] = useState<User[]>([]);
+  const [docentesRecords, setDocentesRecords] = useState<Docente[]>([]);
+
   useEffect(() => {
     const usersQuery = query(collection(db, "users"));
     const unsubUsers = onSnapshot(usersQuery, (usersSnapshot) => {
       const allUsers = usersSnapshot.docs.map(doc => ({ ...doc.data(), uid: doc.id, id: doc.id } as unknown as User));
-      
-      const recordsQuery = collection(db, "docentes");
-      const unsubRecords = onSnapshot(recordsQuery, (recordsSnapshot) => {
-        const docenteRecords = recordsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Docente));
-        
-        const combined: (User | Docente)[] = [...allUsers];
-        const userEmails = new Set(allUsers.map(d => d.correo));
-        
-        docenteRecords.forEach(record => {
-          if (record.correo && !userEmails.has(record.correo)) combined.push(record);
-          else if (!record.correo) combined.push(record);
-        });
-
-        setDocentes(combined);
-      });
-      return () => unsubRecords();
+      setUsersData(allUsers);
     });
-    return () => unsubUsers();
+
+    const recordsQuery = collection(db, "docentes");
+    const unsubRecords = onSnapshot(recordsQuery, (recordsSnapshot) => {
+      const records = recordsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Docente));
+      setDocentesRecords(records);
+    });
+
+    return () => {
+      unsubUsers();
+      unsubRecords();
+    };
   }, []);
+
+  useEffect(() => {
+    const combined: (User | Docente)[] = [...usersData];
+    const userEmails = new Set(usersData.map(d => d.correo));
+    
+    docentesRecords.forEach(record => {
+      if (record.correo && !userEmails.has(record.correo)) combined.push(record);
+      else if (!record.correo) combined.push(record);
+    });
+
+    setDocentes(combined);
+  }, [usersData, docentesRecords]);
 
   useEffect(() => {
     if (!appUser || docentes.length === 0) return;

@@ -42,6 +42,9 @@ export default function ProductivityPageContent() {
       to: endOfMonth(new Date()),
     });
 
+    const [usersSnapshotData, setUsersSnapshotData] = useState<any[]>([]);
+    const [docentesSnapshotData, setDocentesSnapshotData] = useState<any[]>([]);
+
     useEffect(() => {
         const supervisorRoles: DocenteResponsabilidad[] = [
             'docente_supervisor_revisores', 
@@ -51,45 +54,57 @@ export default function ProductivityPageContent() {
     
         const usersQuery = query(collection(db, "users"), where("roles", "array-contains-any", supervisorRoles));
         const unsubUsers = onSnapshot(usersQuery, (usersSnapshot) => {
-            const unsubDocentes = onSnapshot(collection(db, "docentes"), (docentesSnapshot) => {
-                const supervisorMap = new Map<string, User>();
-    
-                usersSnapshot.docs.forEach(doc => {
-                    const data = doc.data();
-                    supervisorMap.set(doc.id, { 
-                        uid: doc.id, 
-                        nombre: data.nombre,
-                        apellidos: data.apellidos,
-                        correo: data.correo,
-                        roles: data.roles || [],
-                        ...data,
-                    } as User);
-                });
-    
-                docentesSnapshot.docs.forEach(doc => {
-                    const data = doc.data();
-                    const responsabilidades = data.responsabilidades || [];
-                    const isSupervisor = responsabilidades.some((r: DocenteResponsabilidad) => supervisorRoles.includes(r));
-                    
-                    if (isSupervisor && !supervisorMap.has(doc.id)) {
-                        supervisorMap.set(doc.id, { 
-                            uid: doc.id, 
-                            nombre: data.nombre,
-                            apellidos: data.apellidos,
-                            correo: data.correo,
-                            roles: responsabilidades,
-                            ...data,
-                        } as User);
-                    }
-                });
-                
-                setSupervisors(Array.from(supervisorMap.values()));
-            });
-            return () => unsubDocentes();
+            setUsersSnapshotData(usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         });
-    
-        return () => unsubUsers();
+
+        const unsubDocentes = onSnapshot(collection(db, "docentes"), (docentesSnapshot) => {
+            setDocentesSnapshotData(docentesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        });
+
+        return () => {
+            unsubUsers();
+            unsubDocentes();
+        };
     }, []);
+
+    useEffect(() => {
+        const supervisorRoles: DocenteResponsabilidad[] = [
+            'docente_supervisor_revisores', 
+            'docente_supervisor_asesores', 
+            'docente_supervisor_turnitin'
+        ];
+
+        const supervisorMap = new Map<string, User>();
+
+        usersSnapshotData.forEach(data => {
+            supervisorMap.set(data.id, { 
+                uid: data.id, 
+                nombre: data.nombre,
+                apellidos: data.apellidos,
+                correo: data.correo,
+                roles: data.roles || [],
+                ...data,
+            } as User);
+        });
+
+        docentesSnapshotData.forEach(data => {
+            const responsabilidades = data.responsabilidades || [];
+            const isSupervisor = responsabilidades.some((r: DocenteResponsabilidad) => supervisorRoles.includes(r));
+            
+            if (isSupervisor && !supervisorMap.has(data.id)) {
+                supervisorMap.set(data.id, { 
+                    uid: data.id, 
+                    nombre: data.nombre,
+                    apellidos: data.apellidos,
+                    correo: data.correo,
+                    roles: responsabilidades,
+                    ...data,
+                } as User);
+            }
+        });
+        
+        setSupervisors(Array.from(supervisorMap.values()));
+    }, [usersSnapshotData, docentesSnapshotData]);
 
     useEffect(() => {
         if (!date?.from || !date.to) return;

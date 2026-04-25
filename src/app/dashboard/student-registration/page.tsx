@@ -37,28 +37,40 @@ export default function StudentRegistrationPage() {
 
   const { appUser } = useAuth();
 
+  const [usersData, setUsersData] = useState<User[]>([]);
+  const [docentesRecords, setDocentesRecords] = useState<Docente[]>([]);
+
   useEffect(() => {
     const usersQuery = query(collection(db, "users"), where("roles", "array-contains", "docente"));
     const unsubUsers = onSnapshot(usersQuery, (usersSnapshot) => {
-        const usersData = usersSnapshot.docs.map(doc => ({ ...doc.data(), uid: doc.id, id: doc.id } as unknown as User));
-        const docentesRecordsQuery = collection(db, "docentes");
-        const unsubRecords = onSnapshot(docentesRecordsQuery, (recordsSnapshot) => {
-            const recordsData = recordsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Docente));
-            const combined = [...usersData.map(u => ({ ...u, responsabilidades: u.roles }))] as DocenteConResponsabilidad[];
-            const userEmails = new Set(usersData.map(u => u.correo));
-            recordsData.forEach(r => {
-                if (r.correo && !userEmails.has(r.correo)) {
-                    combined.push({ ...r, uid: r.id, responsabilidades: r.responsabilidades || [] });
-                } else if (!r.correo) {
-                    combined.push({ ...r, uid: r.id, responsabilidades: r.responsabilidades || [] });
-                }
-            });
-            setDocentes(combined);
-        });
-        return () => unsubRecords();
+        const users = usersSnapshot.docs.map(doc => ({ ...doc.data(), uid: doc.id, id: doc.id } as unknown as User));
+        setUsersData(users);
     });
-    return () => unsubUsers();
+    
+    const docentesRecordsQuery = collection(db, "docentes");
+    const unsubRecords = onSnapshot(docentesRecordsQuery, (recordsSnapshot) => {
+        const records = recordsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Docente));
+        setDocentesRecords(records);
+    });
+
+    return () => {
+        unsubUsers();
+        unsubRecords();
+    };
   }, []);
+
+  useEffect(() => {
+    const combined = [...usersData.map(u => ({ ...u, responsabilidades: u.roles }))] as DocenteConResponsabilidad[];
+    const userEmails = new Set(usersData.map(u => u.correo));
+    docentesRecords.forEach(r => {
+        if (r.correo && !userEmails.has(r.correo)) {
+            combined.push({ ...r, uid: r.id, responsabilidades: r.responsabilidades || [] });
+        } else if (!r.correo) {
+            combined.push({ ...r, uid: r.id, responsabilidades: r.responsabilidades || [] });
+        }
+    });
+    setDocentes(combined);
+  }, [usersData, docentesRecords]);
 
   // Effect to load all thesis plans
   useEffect(() => {

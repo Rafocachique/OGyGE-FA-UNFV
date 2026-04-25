@@ -24,111 +24,114 @@ export default function DashboardPage() {
 
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
 
+  const [usersData, setUsersData] = useState<User[]>([]);
+  const [docentesRecords, setDocentesRecords] = useState<Docente[]>([]);
+
   useEffect(() => {
-    if (!appUser) return;
     setLoading(true);
-
-    const usersQuery = query(
-      collection(db, "users"),
-      where("roles", "array-contains", "docente")
-    );
+    const usersQuery = query(collection(db, "users"), where("roles", "array-contains", "docente"));
     const unsubUsers = onSnapshot(usersQuery, (usersSnapshot) => {
-      const docenteUsers = usersSnapshot.docs.map(
-        (doc) => ({ ...doc.data(), uid: doc.id } as User)
-      );
-
-      const recordsQuery = collection(db, "docentes");
-      const unsubRecords = onSnapshot(recordsQuery, (recordsSnapshot) => {
-        const docenteRecords = recordsSnapshot.docs.map(
-          (doc) => ({ ...doc.data(), id: doc.id } as Docente)
-        );
-
-        const combinedDocentes: (User | Docente)[] = [...docenteUsers];
-        const userEmails = new Set(docenteUsers.map((d) => d.correo));
-
-        docenteRecords.forEach((record) => {
-          if (record.correo && !userEmails.has(record.correo)) {
-            combinedDocentes.push(record);
-          } else if (!record.correo) {
-             combinedDocentes.push(record);
-          }
-        });
-        setDocentes(combinedDocentes);
-        
-        // --- Main Data Fetching Logic ---
-        const isAdminOrDecano = appUser.roles.includes('admin') || appUser.roles.includes('decano');
-        let plansQuery;
-    
-        if (isAdminOrDecano) {
-            plansQuery = query(collection(db, "thesisPlans"));
-        } else {
-            const clauses = [];
-            if (appUser.roles.includes('docente_supervisor_revisores')) {
-                clauses.push(where("supervisorRevisoresId", "==", appUser.uid));
-            }
-            if (appUser.roles.includes('docente_supervisor_asesores')) {
-                clauses.push(where("supervisorAsesoresId", "==", appUser.uid));
-            }
-            if (appUser.roles.includes('docente_supervisor_turnitin')) {
-                clauses.push(where("listoParaTurnitin", "==", true));
-            }
-    
-            if (clauses.length === 0) {
-                setAllPlans([]);
-                setLoading(false);
-                return;
-            }
-            plansQuery = query(collection(db, "thesisPlans"), or(...clauses));
-        }
-    
-        const unsubscribePlans = onSnapshot(plansQuery, (snapshot) => {
-          let allPlansData = snapshot.docs.map(doc => {
-              const plan = doc.data() as ThesisPlan;
-  
-              // Review days logic
-              let diasRestantesRevision = 0;
-              if (plan.estadoGlobal === "LISTO PARA ASESOR") {
-                  const fechaAprobado1 = plan.revisor1?.fechaAprobado ? new Date(plan.revisor1.fechaAprobado) : null;
-                  const fechaAprobado2 = plan.revisor2?.fechaAprobado ? new Date(plan.revisor2.fechaAprobado) : null;
-                  let fechaAprobacionFinal = fechaAprobado1 && fechaAprobado2 ? (fechaAprobado1 > fechaAprobado2 ? fechaAprobado1 : fechaAprobado2) : (fechaAprobado1 || fechaAprobado2);
-                  if (fechaAprobacionFinal && plan.vencimientoRevision) {
-                      diasRestantesRevision = Math.floor((new Date(plan.vencimientoRevision).getTime() - fechaAprobacionFinal.getTime()) / (1000 * 3600 * 24));
-                  }
-              } else if (plan.vencimientoRevision) {
-                  diasRestantesRevision = Math.floor((new Date(plan.vencimientoRevision).getTime() - new Date().setHours(0,0,0,0)) / (1000 * 3600 * 24));
-              }
-  
-              // Advisory days logic
-              const fechaAsignacion = new Date(plan.submissionDate);
-              const vencimientoOriginal = addYears(fechaAsignacion, 1);
-              const fechaVencimientoFinal = (plan.ampliacion?.activa && plan.ampliacion?.fechaNuevoVencimiento) 
-                  ? new Date(plan.ampliacion.fechaNuevoVencimiento) 
-                  : vencimientoOriginal;
-              
-              let diasRestantesAsesoria;
-              if (plan.estadoGlobal === 'CULMINADO' && plan.fechaAprobacionAsesoria) {
-                diasRestantesAsesoria = differenceInCalendarDays(fechaVencimientoFinal, new Date(plan.fechaAprobacionAsesoria));
-              } else {
-                diasRestantesAsesoria = differenceInCalendarDays(fechaVencimientoFinal, new Date());
-              }
-  
-              return { ...plan, id: doc.id, diasRestantesRevision, diasRestantesAsesoria } as ThesisPlan;
-          });
-          
-          setAllPlans(allPlansData);
-          setLoading(false);
-        }, (error) => {
-          console.error("Error fetching thesis plans: ", error);
-          setLoading(false);
-        });
-
-        return () => unsubscribePlans();
-      });
-
-      return () => unsubRecords();
+      const docenteUsers = usersSnapshot.docs.map((doc) => ({ ...doc.data(), uid: doc.id } as User));
+      setUsersData(docenteUsers);
     });
 
-    return () => unsubUsers();
+    const recordsQuery = collection(db, "docentes");
+    const unsubRecords = onSnapshot(recordsQuery, (recordsSnapshot) => {
+      const docenteRecords = recordsSnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id } as Docente));
+      setDocentesRecords(docenteRecords);
+    });
+
+    return () => {
+      unsubUsers();
+      unsubRecords();
+    };
+  }, []);
+
+  useEffect(() => {
+    const combinedDocentes: (User | Docente)[] = [...usersData];
+    const userEmails = new Set(usersData.map((d) => d.correo));
+
+    docentesRecords.forEach((record) => {
+      if (record.correo && !userEmails.has(record.correo)) {
+        combinedDocentes.push(record);
+      } else if (!record.correo) {
+         combinedDocentes.push(record);
+      }
+    });
+    setDocentes(combinedDocentes);
+  }, [usersData, docentesRecords]);
+
+  useEffect(() => {
+    if (!appUser) return;
+    
+    // --- Main Data Fetching Logic ---
+    const isAdminOrDecano = appUser.roles.includes('admin') || appUser.roles.includes('decano');
+    let plansQuery;
+
+    if (isAdminOrDecano) {
+        plansQuery = query(collection(db, "thesisPlans"));
+    } else {
+        const clauses = [];
+        if (appUser.roles.includes('docente_supervisor_revisores')) {
+            clauses.push(where("supervisorRevisoresId", "==", appUser.uid));
+        }
+        if (appUser.roles.includes('docente_supervisor_asesores')) {
+            clauses.push(where("supervisorAsesoresId", "==", appUser.uid));
+        }
+        if (appUser.roles.includes('docente_supervisor_turnitin')) {
+            clauses.push(where("listoParaTurnitin", "==", true));
+        }
+
+        if (clauses.length === 0) {
+            setAllPlans([]);
+            setLoading(false);
+            return;
+        }
+        plansQuery = query(collection(db, "thesisPlans"), or(...clauses));
+    }
+
+    const unsubscribePlans = onSnapshot(plansQuery, (snapshot) => {
+      let allPlansData = snapshot.docs.map(doc => {
+          const plan = doc.data() as ThesisPlan;
+
+          // Review days logic
+          let diasRestantesRevision = 0;
+          if (plan.estadoGlobal === "LISTO PARA ASESOR") {
+              const fechaAprobado1 = plan.revisor1?.fechaAprobado ? new Date(plan.revisor1.fechaAprobado) : null;
+              const fechaAprobado2 = plan.revisor2?.fechaAprobado ? new Date(plan.revisor2.fechaAprobado) : null;
+              let fechaAprobacionFinal = fechaAprobado1 && fechaAprobado2 ? (fechaAprobado1 > fechaAprobado2 ? fechaAprobado1 : fechaAprobado2) : (fechaAprobado1 || fechaAprobado2);
+              if (fechaAprobacionFinal && plan.vencimientoRevision) {
+                  diasRestantesRevision = Math.floor((new Date(plan.vencimientoRevision).getTime() - fechaAprobacionFinal.getTime()) / (1000 * 3600 * 24));
+              }
+          } else if (plan.vencimientoRevision) {
+              diasRestantesRevision = Math.floor((new Date(plan.vencimientoRevision).getTime() - new Date().setHours(0,0,0,0)) / (1000 * 3600 * 24));
+          }
+
+          // Advisory days logic
+          const fechaAsignacion = new Date(plan.submissionDate);
+          const vencimientoOriginal = addYears(fechaAsignacion, 1);
+          const fechaVencimientoFinal = (plan.ampliacion?.activa && plan.ampliacion?.fechaNuevoVencimiento) 
+              ? new Date(plan.ampliacion.fechaNuevoVencimiento) 
+              : vencimientoOriginal;
+          
+          let diasRestantesAsesoria;
+          if (plan.estadoGlobal === 'CULMINADO' && plan.fechaAprobacionAsesoria) {
+            diasRestantesAsesoria = differenceInCalendarDays(fechaVencimientoFinal, new Date(plan.fechaAprobacionAsesoria));
+          } else {
+            diasRestantesAsesoria = differenceInCalendarDays(fechaVencimientoFinal, new Date());
+          }
+
+          return { ...plan, id: doc.id, diasRestantesRevision, diasRestantesAsesoria } as ThesisPlan;
+      });
+      
+      setAllPlans(allPlansData);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching thesis plans: ", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribePlans();
   }, [appUser]);
 
   const userRoles = appUser?.roles || [];

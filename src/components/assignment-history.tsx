@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Assignment, AppUser } from '@/lib/types';
 import {
   Card,
@@ -46,33 +46,40 @@ const AssignmentTable = ({
     assignments, 
     type,
     searchTerm,
-    globalSort,
-    globalSupervisor,
-    itemsPerPage,
     onDelete,
     onEdit,
 } : { 
     assignments: Assignment[], 
     type: 'revisores' | 'asesor',
     searchTerm: string,
-    globalSort: string,
-    globalSupervisor: string,
-    itemsPerPage: number,
     onDelete: (assignmentId: string) => void;
     onEdit: (assignment: Assignment) => void;
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
+  const [localSort, setLocalSort] = useState("recent");
+  const [localSupervisor, setLocalSupervisor] = useState("all");
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Restart page on config change
-  useMemo(() => {
+  useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, globalSort, globalSupervisor, itemsPerPage]);
+  }, [searchTerm, localSort, localSupervisor, itemsPerPage]);
+
+  const typeSupervisors = useMemo(() => {
+    const items = assignments.filter(a => a.assignmentType === type);
+    return Array.from(
+      new Set(
+        items.map(a => type === 'revisores' ? a.supervisorRevisores : a.supervisorAsesores)
+        .filter(Boolean)
+      )
+    ) as string[];
+  }, [assignments, type]);
 
   const sortedAndFilteredAssignments = useMemo(() => {
     let sortableItems = assignments.filter(a => a.assignmentType === type);
 
-    if (globalSupervisor !== "all") {
-        sortableItems = sortableItems.filter(a => type === 'revisores' ? a.supervisorRevisores === globalSupervisor : a.supervisorAsesores === globalSupervisor);
+    if (localSupervisor !== "all") {
+        sortableItems = sortableItems.filter(a => type === 'revisores' ? a.supervisorRevisores === localSupervisor : a.supervisorAsesores === localSupervisor);
     }
 
     if (searchTerm) {
@@ -87,23 +94,23 @@ const AssignmentTable = ({
     }
     
     sortableItems.sort((a, b) => {
-        if (globalSort === 'recent') {
+        if (localSort === 'recent') {
             return new Date(b.date).getTime() - new Date(a.date).getTime();
         }
-        if (globalSort === 'oldest') {
+        if (localSort === 'oldest') {
             return new Date(a.date).getTime() - new Date(b.date).getTime();
         }
-        if (globalSort === 'alpha_asc') {
+        if (localSort === 'alpha_asc') {
             return a.studentName.localeCompare(b.studentName);
         }
-        if (globalSort === 'alpha_desc') {
+        if (localSort === 'alpha_desc') {
             return b.studentName.localeCompare(a.studentName);
         }
         return 0;
     });
 
     return sortableItems;
-  }, [assignments, searchTerm, type, globalSort, globalSupervisor]);
+  }, [assignments, searchTerm, type, localSort, localSupervisor]);
 
   const totalPages = Math.ceil(sortedAndFilteredAssignments.length / itemsPerPage) || 1;
   const paginatedAssignments = sortedAndFilteredAssignments.slice(
@@ -159,7 +166,54 @@ const AssignmentTable = ({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 mt-2">
+      <div className="flex flex-wrap gap-4 items-center bg-muted/20 p-3 rounded-lg border">
+          <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-muted-foreground">Ordenar:</span>
+              <Select value={localSort} onValueChange={setLocalSort}>
+                  <SelectTrigger className="w-[160px] bg-background">
+                      <SelectValue placeholder="Ordenar por" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="recent">Más recientes</SelectItem>
+                      <SelectItem value="oldest">Más antiguos</SelectItem>
+                      <SelectItem value="alpha_asc">Alfabético (A-Z)</SelectItem>
+                      <SelectItem value="alpha_desc">Alfabético (Z-A)</SelectItem>
+                  </SelectContent>
+              </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-muted-foreground">Supervisor:</span>
+              <Select value={localSupervisor} onValueChange={setLocalSupervisor}>
+                  <SelectTrigger className="w-[180px] sm:w-[220px] bg-background">
+                      <SelectValue placeholder="Supervisor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="all">Todos los supervisores</SelectItem>
+                      {typeSupervisors.map(s => (
+                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                  </SelectContent>
+              </Select>
+          </div>
+
+          <div className="flex items-center gap-2 ml-auto">
+              <span className="text-sm font-medium text-muted-foreground hidden sm:inline">Mostrar:</span>
+              <Select value={itemsPerPage.toString()} onValueChange={(val) => setItemsPerPage(Number(val))}>
+                  <SelectTrigger className="w-[110px] bg-background">
+                      <SelectValue placeholder="Mostrar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="5">5 / Pág.</SelectItem>
+                      <SelectItem value="10">10 / Pág.</SelectItem>
+                      <SelectItem value="20">20 / Pág.</SelectItem>
+                      <SelectItem value="50">50 / Pág.</SelectItem>
+                  </SelectContent>
+              </Select>
+          </div>
+      </div>
+
       <div className="border rounded-lg">
         <Table>
           <TableHeader>
@@ -253,9 +307,6 @@ const AssignmentTable = ({
 
 export function AssignmentHistory({ assignments, onDelete, onEdit, currentUser }: AssignmentHistoryProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [globalSort, setGlobalSort] = useState("recent");
-  const [globalSupervisor, setGlobalSupervisor] = useState("all");
-  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const roles = currentUser?.roles || [];
   const isAdminOrDecano = roles.includes('admin') || roles.includes('decano');
@@ -265,13 +316,6 @@ export function AssignmentHistory({ assignments, onDelete, onEdit, currentUser }
   const defaultTab = canSeeRevisores ? "revisores" : "asesores";
   const totalRevisores = assignments.filter(a => a.assignmentType === 'revisores').length;
   const totalAsesores = assignments.filter(a => a.assignmentType === 'asesor').length;
-
-  const allSupervisors = Array.from(
-    new Set(
-      assignments.map(a => a.assignmentType === 'revisores' ? a.supervisorRevisores : a.supervisorAsesores)
-      .filter(Boolean)
-    )
-  ) as string[];
 
   return (
     <Card>
@@ -299,54 +343,6 @@ export function AssignmentHistory({ assignments, onDelete, onEdit, currentUser }
                         />
                     </div>
                 </div>
-                
-                {/* Global Filters */}
-                <div className="flex flex-wrap gap-4 items-center bg-muted/20 p-3 rounded-lg border">
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-muted-foreground">Ordenar:</span>
-                        <Select value={globalSort} onValueChange={setGlobalSort}>
-                            <SelectTrigger className="w-[160px] bg-background">
-                                <SelectValue placeholder="Ordenar por" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="recent">Más recientes</SelectItem>
-                                <SelectItem value="oldest">Más antiguos</SelectItem>
-                                <SelectItem value="alpha_asc">Alfabético (A-Z)</SelectItem>
-                                <SelectItem value="alpha_desc">Alfabético (Z-A)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-muted-foreground">Supervisor:</span>
-                        <Select value={globalSupervisor} onValueChange={setGlobalSupervisor}>
-                            <SelectTrigger className="w-[180px] sm:w-[220px] bg-background">
-                                <SelectValue placeholder="Supervisor" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todos los supervisores</SelectItem>
-                                {allSupervisors.map(s => (
-                                    <SelectItem key={s} value={s}>{s}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="flex items-center gap-2 ml-auto">
-                        <span className="text-sm font-medium text-muted-foreground hidden sm:inline">Mostrar:</span>
-                        <Select value={itemsPerPage.toString()} onValueChange={(val) => setItemsPerPage(Number(val))}>
-                            <SelectTrigger className="w-[110px] bg-background">
-                                <SelectValue placeholder="Mostrar" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="5">5 / Pág.</SelectItem>
-                                <SelectItem value="10">10 / Pág.</SelectItem>
-                                <SelectItem value="20">20 / Pág.</SelectItem>
-                                <SelectItem value="50">50 / Pág.</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
             </div>
 
             {canSeeRevisores && (
@@ -355,9 +351,6 @@ export function AssignmentHistory({ assignments, onDelete, onEdit, currentUser }
                         assignments={assignments} 
                         type="revisores" 
                         searchTerm={searchTerm} 
-                        globalSort={globalSort}
-                        globalSupervisor={globalSupervisor}
-                        itemsPerPage={itemsPerPage}
                         onDelete={onDelete} 
                         onEdit={onEdit} 
                     />
@@ -369,9 +362,6 @@ export function AssignmentHistory({ assignments, onDelete, onEdit, currentUser }
                         assignments={assignments} 
                         type="asesor" 
                         searchTerm={searchTerm} 
-                        globalSort={globalSort}
-                        globalSupervisor={globalSupervisor}
-                        itemsPerPage={itemsPerPage}
                         onDelete={onDelete} 
                         onEdit={onEdit} 
                     />

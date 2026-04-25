@@ -1329,38 +1329,41 @@ export default function ThesisReviewPage() {
   }, [searchParams, plans]);
 
 
+  const [usersData, setUsersData] = useState<User[]>([]);
+  const [docentesRecords, setDocentesRecords] = useState<Docente[]>([]);
+
   useEffect(() => {
-    const usersQuery = query(
-      collection(db, "users"),
-      where("roles", "array-contains", "docente")
-    );
+    const usersQuery = query(collection(db, "users"), where("roles", "array-contains", "docente"));
     const unsubUsers = onSnapshot(usersQuery, (usersSnapshot) => {
-      const docenteUsers = usersSnapshot.docs.map(
-        (doc) => ({ ...doc.data(), uid: doc.id, id: doc.id } as unknown as User)
-      );
-
-      const recordsQuery = collection(db, "docentes");
-      const unsubRecords = onSnapshot(recordsQuery, (recordsSnapshot) => {
-        const docenteRecords = recordsSnapshot.docs.map(
-          (doc) => ({ ...doc.data(), id: doc.id } as Docente)
-        );
-
-        const combinedDocentes: (User | Docente)[] = [...docenteUsers];
-        const userEmails = new Set(docenteUsers.map((d) => d.correo));
-
-        docenteRecords.forEach((record) => {
-          if (record.correo && !userEmails.has(record.correo)) {
-            combinedDocentes.push(record);
-          } else if (!record.correo) {
-             combinedDocentes.push(record);
-          }
-        });
-        setDocentes(combinedDocentes);
-      });
-      return () => unsubRecords();
+      const docenteUsers = usersSnapshot.docs.map((doc) => ({ ...doc.data(), uid: doc.id, id: doc.id } as unknown as User));
+      setUsersData(docenteUsers);
     });
-    return () => unsubUsers();
+
+    const recordsQuery = collection(db, "docentes");
+    const unsubRecords = onSnapshot(recordsQuery, (recordsSnapshot) => {
+      const records = recordsSnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id } as Docente));
+      setDocentesRecords(records);
+    });
+
+    return () => {
+      unsubUsers();
+      unsubRecords();
+    };
   }, []);
+
+  useEffect(() => {
+    const combinedDocentes: (User | Docente)[] = [...usersData];
+    const userEmails = new Set(usersData.map((d) => d.correo));
+
+    docentesRecords.forEach((record) => {
+      if (record.correo && !userEmails.has(record.correo)) {
+        combinedDocentes.push(record);
+      } else if (!record.correo) {
+         combinedDocentes.push(record);
+      }
+    });
+    setDocentes(combinedDocentes);
+  }, [usersData, docentesRecords]);
 
   useEffect(() => {
     if (!appUser || docentes.length === 0) return;

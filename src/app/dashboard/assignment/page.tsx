@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Student, ThesisPlan, Docente, User, Assignment, DocenteResponsabilidad } from "@/lib/types";
 
 import { AssignmentFormDialog } from "@/components/assignment-form-dialog";
-import { RegisteredReviewsTable } from "@/components/registered-reviews-table";
+import { AssignmentHistory } from "@/components/assignment-history";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -53,46 +53,62 @@ export default function AssignmentPage() {
     return () => unsubStudents();
   }, []);
 
+  const [usersData, setUsersData] = useState<User[]>([]);
+  const [recordsData, setRecordsData] = useState<Docente[]>([]);
+
   useEffect(() => {
     setLoading(true);
     const usersQuery = query(collection(db, "users"), where("roles", "array-contains", "docente"));
     const unsubUsers = onSnapshot(usersQuery, (usersSnapshot) => {
-      const usersData = usersSnapshot.docs.map(doc => ({ ...doc.data(), uid: doc.id, id: doc.id } as unknown as User));
-      const docentesRecordsQuery = collection(db, "docentes");
-      const unsubRecords = onSnapshot(docentesRecordsQuery, (recordsSnapshot) => {
-        const recordsData = recordsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Docente));
-        const combined = [...usersData.map(u => ({ ...u, responsabilidades: u.roles }))] as DocenteConResponsabilidad[];
-        const userEmails = new Set(usersData.map(u => u.correo));
-        recordsData.forEach(r => {
-          if (r.correo && !userEmails.has(r.correo)) {
-            combined.push({ ...r, uid: r.id, responsabilidades: r.responsabilidades || [] });
-          } else if (!r.correo) {
-            combined.push({ ...r, uid: r.id, responsabilidades: r.responsabilidades || [] });
-          }
-        });
-        setDocentes(combined);
-
-        // Fetch thesis plans only after docentes are loaded to ensure data consistency
-        if (appUser) {
-          const plansQuery = query(collection(db, "thesisPlans"));
-          const unsubPlans = onSnapshot(plansQuery, (snapshot) => {
-            const plansData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ThesisPlan));
-            setThesisPlans(plansData);
-            setLoading(false); // Only stop loading after all necessary data is fetched
-          }, (error) => {
-            console.error("Error fetching thesis plans: ", error);
-            toast({ variant: "destructive", title: "Error de Carga", description: "No se pudieron cargar los planes de tesis." });
-            setLoading(false);
-          });
-          return () => unsubPlans();
-        } else {
-          setLoading(false);
-        }
-      });
-      return () => unsubRecords();
+      const data = usersSnapshot.docs.map(doc => ({ ...doc.data(), uid: doc.id, id: doc.id } as unknown as User));
+      setUsersData(data);
+    }, (error) => {
+      console.error("Error fetching docentes from users:", error);
     });
 
-    return () => unsubUsers();
+    const docentesRecordsQuery = collection(db, "docentes");
+    const unsubRecords = onSnapshot(docentesRecordsQuery, (recordsSnapshot) => {
+      const data = recordsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Docente));
+      setRecordsData(data);
+    }, (error) => {
+      console.error("Error fetching docentes records:", error);
+    });
+
+    return () => {
+      unsubUsers();
+      unsubRecords();
+    };
+  }, []);
+
+  useEffect(() => {
+    const combined = [...usersData.map(u => ({ ...u, responsabilidades: u.roles }))] as DocenteConResponsabilidad[];
+    const userEmails = new Set(usersData.map(u => u.correo));
+    recordsData.forEach(r => {
+      if (r.correo && !userEmails.has(r.correo)) {
+        combined.push({ ...r, uid: r.id, responsabilidades: r.responsabilidades || [] });
+      } else if (!r.correo) {
+        combined.push({ ...r, uid: r.id, responsabilidades: r.responsabilidades || [] });
+      }
+    });
+    setDocentes(combined);
+  }, [usersData, recordsData]);
+
+  useEffect(() => {
+    if (appUser) {
+      const plansQuery = query(collection(db, "thesisPlans"));
+      const unsubPlans = onSnapshot(plansQuery, (snapshot) => {
+        const plansData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ThesisPlan));
+        setThesisPlans(plansData);
+        setLoading(false);
+      }, (error) => {
+        console.error("Error fetching thesis plans: ", error);
+        toast({ variant: "destructive", title: "Error de Carga", description: "No se pudieron cargar los planes de tesis." });
+        setLoading(false);
+      });
+      return () => unsubPlans();
+    } else {
+      setLoading(false);
+    }
   }, [appUser, toast]);
 
   const handleOpenDialog = (student: Student, plan?: ThesisPlan) => {
@@ -250,67 +266,16 @@ export default function AssignmentPage() {
         />
       )}
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>
-                Historial de Asignaciones
-                {` (${allAssignments.length})`}
-              </CardTitle>
-              <CardDescription>Consulte y filtre todas las asignaciones de revisores y asesores realizadas.</CardDescription>
-            </div>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Buscar por alumno..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[320px]"
-              />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue={defaultTab}>
-            <div className="flex items-center justify-between pb-4 border-b">
-              <TabsList>
-                {canSeeRevisores && <TabsTrigger value="revisores">Asignaciones de Revisores ({reviewerAssignments.length})</TabsTrigger>}
-                {canSeeAsesores && <TabsTrigger value="asesores">Asignaciones de Asesores ({advisorAssignments.length})</TabsTrigger>}
-              </TabsList>
-            </div>
-            {canSeeRevisores && (
-              <TabsContent value="revisores" className="mt-4">
-                <RegisteredReviewsTable
-                  assignments={reviewerAssignments}
-                  onEdit={(assignmentId) => {
-                    const plan = thesisPlans.find(p => p.id === assignmentId);
-                    const student = students.find(s => s.codigo === plan?.estudiante.codigo);
-                    if (plan && student) handleOpenDialog(student, plan);
-                  }}
-                  onDelete={handleDeletePlan}
-                  assignmentType="revisores"
-                />
-              </TabsContent>
-            )}
-            {canSeeAsesores && (
-              <TabsContent value="asesores" className="mt-4">
-                <RegisteredReviewsTable
-                  assignments={advisorAssignments}
-                  onEdit={(assignmentId) => {
-                    const plan = thesisPlans.find(p => p.id === assignmentId);
-                    const student = students.find(s => s.codigo === plan?.estudiante.codigo);
-                    if (plan && student) handleOpenDialog(student, plan);
-                  }}
-                  onDelete={handleDeletePlan}
-                  assignmentType="asesor"
-                />
-              </TabsContent>
-            )}
-          </Tabs>
-        </CardContent>
-      </Card>
+      <AssignmentHistory 
+        assignments={allAssignments}
+        onDelete={handleDeletePlan}
+        onEdit={(assignment) => {
+          const plan = thesisPlans.find(p => p.id === assignment.id);
+          const student = students.find(s => s.codigo === plan?.estudiante.codigo);
+          if (plan && student) handleOpenDialog(student, plan);
+        }}
+        currentUser={appUser}
+      />
 
       <AssignmentFormDialog
         isOpen={isDialogOpen}
